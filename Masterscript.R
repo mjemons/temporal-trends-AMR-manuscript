@@ -61,3 +61,4 @@ source("analysis/consumption_temporal_trend.R")
 
 #add the session info to have all packages that were used for the analysis
 sessionInfo()
+
