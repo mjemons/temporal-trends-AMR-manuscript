@@ -35,6 +35,9 @@ vignettes/*.pdf
 #the raw data folder
 /data/
 
+#the output directory
+/output/
+
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
