@@ -1,0 +1,22 @@
+#all libraries necessary for the analysis
+suppressPackageStartupMessages({
+  library(minpack.lm)
+  library(dplyr)
+  library(tidyr)
+  library(plyr)
+  library(ggplot2)
+  library(svglite)
+  library(nnet)
+  library(lmtest)
+  library(gridExtra)
+  library(DescTools)
+  library(ggstance)
+  library(broom)
+  library(jtools)
+  library(scales)
+  library(wrapr)
+  library(grid)
+  library(rworldmap)
+})
+
+set.seed(1234)
