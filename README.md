@@ -16,7 +16,6 @@ code/obsolete: older analyses no longer relevant to paper, but kept for referenc
 `/analysis/output`: write figures/tables here
 
 - `supporting_analysis`: folder containing supporting analyses - either as part of our thinking or to go in supplementary materials
-supporting_analysis/output: write figures/tables here
 
 - `package management`: Packages are managed using `renv`. All package versions are specified in the `renv.lock` and can easily be installed with this framework in your system. Futhermore, we provide the `R sessionInfo()` that was used to generate the figures.
 
