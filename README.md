@@ -1,6 +1,6 @@
 # Temporal trends in antibiotic resistance in Europe, 1998-2019
 
-This repository organises the code for the upcoming publication
+This repository organises the code for the [preprint](https://medrxiv.org/cgi/content/short/2023.09.27.23296241v1)
 
 ## Folder contents
 
