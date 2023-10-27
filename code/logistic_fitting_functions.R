@@ -43,7 +43,7 @@ fitting1 = function(tmp1){
   if(length(m)==1){to.return = c(NA,NA,NA,NA,NA,NA,NA,NA)}
   #write output
   else{
-    w = tryCatch({test = confint.default(m)[2,]},
+    w = tryCatch({test = c(summary(m)$parameters[2,1]-qt(0.975, df = summary(m)$df[2])*summary(m)$parameters[2,2], summary(m)$parameters[2,1] + qt(0.975, df = summary(m)$df[2])*summary(m)$parameters[2,2])},
                  warning = function(test){test},
                  error = function(test){c(NA,NA)},
                  finally = function(test){test})

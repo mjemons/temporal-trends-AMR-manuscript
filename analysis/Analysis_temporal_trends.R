@@ -59,12 +59,12 @@ freq_plot <- function(variable.of.interest, coefficients_summary){
     #scale_fill_manual(values=c("#D84315", "#C2185B","#0277BD", "#C0CA33", "#52854C"))+
     scale_fill_manual(values=c("pink4", "pink","wheat4", "wheat", "slategray1","slategray"))+
     ylab('Proportion') +
-    geom_text(aes(label=counts$Count),size = 3, position = position_stack(vjust = 0.5),colour='white')+
+    geom_text(aes(label=counts$Count),size = 4, position = position_stack(vjust = 0.5),colour='white')+
     xlab(variable.of.interest)+
     labs(fill = "Classification of trend") +
     theme_light()+
-    theme(axis.title=element_text(size=10,face="bold"),axis.text.x= element_text(angle = 45, vjust = 0.9, hjust=1, size = 10),legend.title=element_text(size=10,face="bold"), 
-          legend.text=element_text(size=10),legend.position="none")
+    theme(axis.title=element_text(size=12,face="bold"),axis.text.x= element_text(angle = 45, vjust = 0.9, hjust=1, size = 12),legend.title=element_text(size=12,face="bold"), 
+          legend.text=element_text(size=12),legend.position="none")
   if(variable.of.interest == 'Antibiotic_class'){
     p = p + xlab('Antibiotic Class')
   }
@@ -205,25 +205,40 @@ all.fits[all.fits$Pathogen == 'STAAUR',]$Pathogenlong = 'S. aureus'
 all.fits[all.fits$Pathogen == 'STRPNE',]$Pathogenlong = 'S. pneumoniae'
 
 theme_set(theme_gray())
+
+
+signed_log_trans <- trans_new(name = "signed log trans",
+                              transform = function(x) {
+                                sign(x) * log10(abs(x)+1)},
+                              inverse = function(x) {
+                                sign(x) * (10^(abs(x)-1))},
+                              breaks = log_breaks())
 #for(pathogen in pathogens){
 #all.fits.sub.AB <- all.fits[all.fits$Pathogen == pathogen,]
 all.fits.sub.AB <- all.fits[order(all.fits$m1.slope),]
+
+outside <- sum(all.fits.sub.AB$m1.slope.lower< -0.75) + sum(all.fits.sub.AB$m1.slope.upper > 0.75)
+print(paste0('outside of the ylim of [-0.75;0.75] lie ', outside, ' combinations'))
+
 p <- ggplot(all.fits.sub.AB, aes(x=reorder(combR.long,m1.slope), y=m1.slope, col = trend)) + 
   geom_point(stat = 'identity',alpha = 1) +
-  geom_errorbar(aes(ymin=m1.slope.lower, ymax=m1.slope.upper),width=0,alpha = 1) +
+  geom_errorbar(aes(ymin= pmax(m1.slope.lower, -0.75), ymax= pmin(m1.slope.upper, 0.75)),width=0,alpha = 1) +
   #coord_flip(ylim=c(-2,2)) +
-  ylim(-1.75,1.75)+
+  #ylim(-1.75,1.75)+
   #ggtitle(pathogen)+
   theme_classic()+
   ylab('Slope of logistic fit') +
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),panel.spacing = unit(2, "lines"), legend.position="none")+ 
+        axis.ticks.x=element_blank(),panel.spacing = unit(2, "lines"), legend.position="bottom")+ 
   scale_colour_manual(values = c('pink4','slategray','wheat'))+
   scale_x_discrete(expand = c(.02, .02))+
+  scale_y_continuous(limits = c(-0.75,0.75))+
+  #ylim(-1.75,1.75)+
   geom_hline(yintercept=0, linetype="dashed")+
   facet_wrap(~Pathogenlong,scales = "free", nrow=4,ncol=3)
-pdf(paste0('output/logisticslopesummary.pdf'), width = 10, height = 10)
+p
+pdf(paste0('output/logisticslopesummary.pdf'), width = 10, height = 7)
 print(p)
 dev.off()  
 print(p)

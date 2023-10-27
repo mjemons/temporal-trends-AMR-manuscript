@@ -10,14 +10,14 @@ summary_fits = read.csv(file = "data/results/temporal_trend_AICcINPAT.csv")
 
 # rename for plotting + get rid of poor fits
 summary_fits_toplot <- summary_fits[summary_fits$category!='poor fit',]
-summary_fits_toplot[summary_fits_toplot$category == 'logistic ns decreasing',]$category = "decreasing (ns)"
+summary_fits_toplot[summary_fits_toplot$category == 'logistic ns decreasing',]$category = 'decreasing (ns)'
 summary_fits_toplot[summary_fits_toplot$category == 'logistic s decreasing',]$category = 'decreasing (s)'
 summary_fits_toplot[summary_fits_toplot$category == 'logistic ns increasing',]$category = 'increasing (ns)' 
 summary_fits_toplot[summary_fits_toplot$category == 'logistic s increasing',]$category = 'increasing (s)'
 summary_fits_toplot[summary_fits_toplot$category == 'flat ',]$category = 'stable'
 summary_fits_toplot[summary_fits_toplot$category == 'plateauing',]$category = 'stabilising'
 
-summary_fits_toplot$category = factor(summary_fits_toplot$category, levels = c('decreasing (s)',"decreasing (ns)",'stable','stabilising','increasing (ns)','increasing (s)', 'poor fit'))
+summary_fits_toplot$category = factor(summary_fits_toplot$category, levels = c('decreasing (s)','decreasing (ns)','stable','stabilising','increasing (ns)','increasing (s)'))
 
 #### Trends in consumption data ### 
 
@@ -62,10 +62,16 @@ h = ggplot(trends_in_amc[trends_in_amc$Sector == 'Hospital Sector',], aes(x=cate
   stat_summary(fun.data=data_summary)+
   scale_fill_manual(values = rev(c("slategray", "slategray1", "wheat", "wheat4", "pink", "pink4")))+
   theme_classic()+
-  theme(legend.position = 'none', text = element_text(size = 15))+
+  theme(legend.position = 'none', text = element_text(size = 11))+
   ylab('Trend in antibiotic consumption (correlation coefficient)')+
   xlab('Trend in resistance')
 
+data <- trends_in_amc[trends_in_amc$Sector == 'Hospital Sector',]
+#save as R object
+save(data, file = "output/violinplot.rdata")
+
+#save as R object
+save(h, file = "output/violinplot.rdata")
 
 c = ggplot(trends_in_amc[trends_in_amc$Sector == 'Community',], aes(x=category, y=rho, fill = category,alpha = 0.5)) + 
   geom_violin() +
