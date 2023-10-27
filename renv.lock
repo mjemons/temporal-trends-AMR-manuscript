@@ -1533,7 +1533,12 @@
     "renv": {
       "Package": "renv",
       "Version": "0.17.3",
-      "Source": "Repository"
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "utils"
+      ],
+      "Hash": "4543b8cd233ae25c6aba8548be9e747e"
     },
     "rlang": {
       "Package": "rlang",
@@ -1630,6 +1635,16 @@
         "viridisLite"
       ],
       "Hash": "906cb23d2f1c5680b8ce439b44c6fa63"
+    },
+    "sm": {
+      "Package": "sm",
+      "Version": "2.2-5.7.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "df47a85320af5f8f3f21249e0d6e6e4a"
     },
     "sp": {
       "Package": "sp",
@@ -1863,6 +1878,17 @@
         "rlang"
       ],
       "Hash": "a745bda7aff4734c17294bb41d4e4607"
+    },
+    "vioplot": {
+      "Package": "vioplot",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "sm",
+        "zoo"
+      ],
+      "Hash": "f86614a60ec30dabe3b654a100cfba0d"
     },
     "viridis": {
       "Package": "viridis",

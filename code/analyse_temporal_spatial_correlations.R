@@ -1,6 +1,7 @@
 rm(list = ls());# setwd("~/ownCloud/AMR_Sonja_Martin/temporal_trends_AMR/")
 #library(plyr); library(broom)
 load(file = "data/AMR_AMC_correlation.RData")
+source('code/Utils.R')
 #ls()
 
 # AllNew = cleaning of antibiotic type (All, Oral, etc.)
@@ -27,7 +28,7 @@ names(species_names) <- names(species_cols) <- species_acro
 
 #################### FOREST PLOTS OF AMR-AMC SPATIAL CORRELATION ####################
 
-forest_plot <- function(rho_object, main = ""){
+forest_plot <- function(rho_object, main = "") {
   
   stopifnot("Pathogen" %in% names(rho_object))
   stopifnot("Antibiotic" %in% names(rho_object))
@@ -38,14 +39,14 @@ forest_plot <- function(rho_object, main = ""){
   
   n <- length(rho_object$Pathogen)
   oo <- order(rho_object$rho, decreasing = F)
-  par(mar = c(4,4,1,1), xpd = TRUE)
+  par(mar = c(4,4,2,1), xpd = TRUE)
   plot(NULL, ylim = c(0, n), xlim = c(-1, 1), bty = "n", axes = F, xlab = "Correlation coefficient", ylab = "", main = main)
   
   # vertical lines:
   segments(x0 = 0, x1 = 0, y0 = 0, y1  = n+1, lty = 1, col = "black")
   segments(x0 = mean(rho_object$rho), x1 = mean(rho_object$rho), y0 = 0, y1  = n+1, lwd = 2, lty = 2)
   
-  axis(side = 1, at = seq(-1, 1, 0.5))
+  axis(side = 1, at = seq(-1, 1, 0.5), cex.axis = 0.5)
   mycols <- species_cols[rho_object$Pathogen[oo]]
   segments(x0 = rho_object$lwr.ci[oo], x1 = rho_object$upr.ci[oo], y0 = 1:n, y1 = 1:n, col = mycols)
   points(x = rho_object$rho[oo], y = 1:n, pch = 1, col = "black")
@@ -73,6 +74,14 @@ for(variable in c(c("plateau", "slope_v2", "slope_v3", "slope_v4", "median"))){
   }
 }
 
+# added 16/10/2023: figure 5 directly
+pdf("output/figure5.pdf", width = 6*2, height = 6)
+par(mfrow = c(1,2))
+forest_plot(rho_plateau_Community_AllNew_INPAT)
+text(-1.2, 44, "A", cex = 2) 
+forest_plot(rho_slope_v4_Community_AllNew_INPAT)
+text(-1.2, 16.1, "B", cex = 2) 
+dev.off()
 
 # with this measure of slope, actually weak signal of positive correlation
 # plateau:
@@ -279,5 +288,24 @@ for(mysector in c("Community", "Hospital Sector")){
   }
 }
 
+#make multipanel figure 6
+#violinplot created in consumption_temporal_trend.R
+load(file = "output/violinplot.rdata")
 
+library("vioplot")
+colset <- RColorBrewer::brewer.pal(n = 7, name = "Set2"); names(colset) <- unique(data$category)[c(1,6,7,2,4,3)]
+colset <- c("pink4", "pink", "wheat4", "wheat", "slategray1", 'slategray'); names(colset) <- unique(data$category)[c(1,6,7,2,4,3)]
 
+# according to https://stackoverflow.com/questions/14124373/combine-base-and-ggplot-graphics-in-r-figure-window
+vp.Right <- grid::viewport(height=unit(1, "npc"), width=unit(0.5, "npc"), 
+                           just=c("left","top"), 
+                           y=1, x=0.5)
+rho_object <- get_mean_ci(rho_object_present)
+
+pdf(paste0("output/figure_6.pdf"), width =6*2, height = 6)
+par(mfrow=c(1,2))
+forest_plot(rho_object)
+text(-1.2, 68, "A", cex = 2) 
+text(1.1, 68, "B", cex = 2) 
+vioplot(data$rho ~ data$category, col = colset, cex.axis = 0.5, xlab = 'Category', ylab = 'Regression Coefficient [DDD/1000 inhabitants/year/year]', frame.plot = FALSE, vp=vp.Right)
+dev.off()

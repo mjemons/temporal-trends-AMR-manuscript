@@ -98,6 +98,9 @@ plot_DDD_AMRtrend_correlation <- function(myselection, year, class, country_labe
   ################################
   
   ci <- predict(lm0, interval = "confidence", newdata = data.frame(sum_DDD=xDDD))
+  print("Summary of linear model:")
+  print(summary(lm0))
+  print(confint(lm0))
   polygon(x = c(xDDD, rev(xDDD)), y = c(ci[,"lwr"], rev(ci[, 'upr'])), col = "gray", border = NA)
   points(x = xDDD, y = ci[, "fit"], type = "l", lwd= 2)
   points(tmp$sum_DDD, tmp$coeff, pch = 20)
