@@ -37,6 +37,7 @@ vignettes/*.pdf
 
 #the output directory
 /output/
+/supporting_analysis/output/
 
 # Temporary files created by R markdown
 *.utf8.md
