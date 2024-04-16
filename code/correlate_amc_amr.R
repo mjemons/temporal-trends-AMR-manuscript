@@ -102,6 +102,33 @@ for(inoutpat in c("INPAT")){ # do not consider OUTPAT resistance now
       assign(x = paste0("rho_slope_v3_", mysector2, "_", mytype, "_", inoutpat, "_stabilisingOnly"), value =  ddply(tmp_merged[tmp_merged$full.category == "plateau s increasing",  ], .(Pathogen, Antibiotic),   function(x) if(sum(!is.na(x$final_slope_v3)) > 4) c(SpearmanRho(x$Median_AMC, x$final_slope_v3, use = "complete.obs",conf.level = 0.95), Ncountries = sum(!is.na(x$final_slope_v3)))))
       assign(x = paste0("rho_slope_v4_", mysector2, "_", mytype, "_", inoutpat, "_stabilisingOnly"), value =  ddply(tmp_merged[tmp_merged$full.category == "plateau s increasing",  ], .(Pathogen, Antibiotic),   function(x) if(sum(!is.na(x$final_slope_v4)) > 4) c(SpearmanRho(x$Median_AMC, x$final_slope_v3, use = "complete.obs",conf.level = 0.95), Ncountries = sum(!is.na(x$final_slope_v4)))))
       
+      
+      if(mysector == "Community" & mytype == "AllNew"){ # example spatial correlations
+        
+        pdf("output/example_spatial_correlations.pdf", width = 4, height = 6)
+        
+        sub_tmp <- tmp_merged[which(tmp_merged$Pathogen=="ESCCOL" & tmp_merged$Antibiotic=="CIP"), ]
+        
+        par(mfrow = c(2,1), mar = c(4,4,1,1))
+        plot(NULL, xlim = c(0, 4), ylim = c(0, 0.5), las = 1, xlab = "Median antimicrobial use", ylab = "Plateau resistance")
+        lm0 <- lm(final_plateau ~ Median_AMC, data = sub_tmp)
+        pp <- predict.lm(object = lm0, newdata = data.frame(Median_AMC=seq(0,4,0.1)), interval = "confidence", level = 0.95)
+        polygon(x = c(seq(0,4,0.1), rev(seq(0,4,0.1))), y = c(pp[,"lwr"], rev(pp[, 'upr'])), col = "gray", border = NA)
+        points(sub_tmp$Median_AMC, sub_tmp$final_plateau, pch = 20)
+        with(lm0, segments(x0=0,y0=coefficients[1],x1=4,y1=coefficients[1]+4*coefficients[2]))
+        # SpearmanRho(sub_tmp$Median_AMC, sub_tmp$final_plateau, use = "complete.obs",conf.level = 0.95)
+        
+        plot(NULL, xlim = c(0, 4), ylim = c(0, 0.05), las = 1, xlab = "Median antimicrobial use", ylab = "Slope of resistance increase")
+        lm1 <- lm(final_slope_v4 ~ Median_AMC, data = sub_tmp)
+        #pp <- predict.lm(object = lm1, newdata = data.frame(final_slope_v4=seq(0,05,0.001)), interval = "confidence", level = 0.95)
+        #polygon(x = c(seq(0,05,0.001), rev(seq(0,05,0.001))), y = c(pp[,"lwr"], rev(pp[, 'upr'])), col = "gray", border = NA)
+        points(sub_tmp$Median_AMC, sub_tmp$final_slope_v4, pch = 20)
+        with(lm1, segments(x0=0,y0=coefficients[1],x1=4,y1=coefficients[1]+4*coefficients[2]))
+        # text(sub_tmp$Median_AMC, sub_tmp$final_slope_v4, sub_tmp$Country)
+        # SpearmanRho(sub_tmp$Median_AMC, sub_tmp$final_slope_v4, use = "complete.obs",conf.level = 0.95)
+        dev.off()
+      }
+      
     }
   }
   
@@ -115,7 +142,7 @@ rho_spatial_names <- ls()[grepl(pattern = "rho_", ls())]
 # here temporal correlation between AMR and AMC
 # (no need to use fit of temporal trends)
 
-amr_summary <- read.csv("data/summary_AMR.csv")
+amr_summary <- read.csv("data/summary_AMR_filtered.csv")
 amr_summary$combC_2 <- paste(amr_summary$Antibiotic_class, amr_summary$Country, amr_summary$patientType, sep = "|")
 
 inoutpat <- "INPAT"
@@ -140,6 +167,28 @@ for(mysector in c("Community", "Hospital Sector")){
       print(mysector)
       print(mytype)
       print(t.test(rho_temporal$rho))
+      
+      if(mysector == "Hospital Sector" & mytype == "AllNew" & yearshift == 0){ # example temporal correlations
+        
+        pdf("output/example_temporal_correlations.pdf", width = 4, height = 3)
+        par(mar = c(4,4,1,1))
+        sub_tmp <- tmp_merged[which(tmp_merged$Pathogen=="ESCCOL" & tmp_merged$Antibiotic=="CIP" & tmp_merged$Antibiotic_class=="J01M"), ]
+        plot(NULL, xlim = c(0, 0.5), ylim = c(0, 0.5), las = 1, xlab = "Antimicrobial use across years", ylab = "Resistance across years")
+        colset <- MetBrewer::met.brewer(name = "Hokusai1", n = 25); names(colset) <-  unique(sub_tmp$Country)
+        for(cc in unique(sub_tmp$Country)){
+          sub_tmp[which(sub_tmp$Country==cc),] -> truc
+          if(nrow(truc)>4){ # more than 4 years as above
+            points(truc$DDD, truc$p, pch = 20, col = colset[cc])
+            lm2 <- lm(p ~ DDD, data = truc)
+            with(lm2, segments(x0=0,y0=coefficients[1],x1=0.5,y1=coefficients[1]+0.5*coefficients[2], col = colset[cc])) 
+          }
+        }
+        lm3 <- lmer(p ~ DDD + (1|Country), data = sub_tmp)
+        segments(x0=0,y0=fixef(lm3)[1],x1=0.5,y1=fixef(lm3)[1]+0.5*fixef(lm3)[2], col = "gray", lwd = 4)
+        dev.off()
+        
+      }
+      
     }
   }
 }

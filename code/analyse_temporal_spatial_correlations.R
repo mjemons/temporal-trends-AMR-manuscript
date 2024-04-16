@@ -1,6 +1,7 @@
-rm(list = ls());# setwd("~/ownCloud/AMR_Sonja_Martin/temporal_trends_AMR/")
-#library(plyr); library(broom)
+rm(list = ls());
+#library(plyr); library(broom); library(MetBrewer)
 load(file = "data/AMR_AMC_correlation.RData")
+amr_summary <- read.csv(file = "data/summary_AMR_filtered.csv");  corr_AB_class <- table(amr_summary$Antibiotic, amr_summary$Antibiotic_class); corr_AB_class <- apply(corr_AB_class, 1, function(x)names(x)[which(x!=0)]); rm(amr_summary)
 source('code/Utils.R')
 #ls()
 
@@ -28,7 +29,7 @@ names(species_names) <- names(species_cols) <- species_acro
 
 #################### FOREST PLOTS OF AMR-AMC SPATIAL CORRELATION ####################
 
-forest_plot <- function(rho_object, main = "") {
+forest_plot <- function(rho_object, main = "", add_legend = F) {
   
   stopifnot("Pathogen" %in% names(rho_object))
   stopifnot("Antibiotic" %in% names(rho_object))
@@ -40,25 +41,52 @@ forest_plot <- function(rho_object, main = "") {
   n <- length(rho_object$Pathogen)
   oo <- order(rho_object$rho, decreasing = F)
   par(mar = c(4,4,2,1), xpd = TRUE)
+  
   plot(NULL, ylim = c(0, n), xlim = c(-1, 1), bty = "n", axes = F, xlab = "Correlation coefficient", ylab = "", main = main)
   
   # vertical lines:
   segments(x0 = 0, x1 = 0, y0 = 0, y1  = n+1, lty = 1, col = "black")
-  segments(x0 = mean(rho_object$rho), x1 = mean(rho_object$rho), y0 = 0, y1  = n+1, lwd = 2, lty = 2)
+  #segments(x0 = mean(rho_object$rho), x1 = mean(rho_object$rho), y0 = 0, y1  = n+1, lwd = 2, lty = 2)
+  axis(side = 1, at = seq(-1, 1, 0.5), cex.axis = 1)
   
-  axis(side = 1, at = seq(-1, 1, 0.5), cex.axis = 0.5)
-  mycols <- species_cols[rho_object$Pathogen[oo]]
-  segments(x0 = rho_object$lwr.ci[oo], x1 = rho_object$upr.ci[oo], y0 = 1:n, y1 = 1:n, col = mycols)
-  points(x = rho_object$rho[oo], y = 1:n, pch = 1, col = "black")
-  points(x = rho_object$rho[oo], y = 1:n, pch = 20, col = mycols)
-  text(x = -1.2, y = 1:n,
-       labels = paste(rho_object$Antibiotic[oo], paste(", N =", rho_object$Ncountries[oo]), sep = ""),
-       cex = 0.5, adj = 0)
-  legend(-0.9, y = n, legend = species_names, pch = 20, col = species_cols, bty = "n", cex = 0.9)
-  legend(-0.9, y = n, legend = rep("", 8), pch = 1, col = "black", bty = "n", cex = 0.9)
+  
+  
+  mycols <- sapply(rho_object$lwr.ci, function(x) ifelse(x>0,"black", "gray")) #species_cols[rho_object$Pathogen[oo]]
+  segments(x0 = rho_object$lwr.ci[oo], x1 = rho_object$upr.ci[oo], y0 = 1:n, y1 = 1:n, lwd = 3, col = mycols[oo])
+  segments(x0 = rho_object$lwr.ci[oo], x1 = rho_object$lwr.ci[oo], y0 = (1:n)-0.2, y1 = (1:n)+0.2, lwd = 3, col = mycols[oo])
+  segments(x0 = rho_object$upr.ci[oo], x1 = rho_object$upr.ci[oo], y0 = (1:n)-0.2, y1 = (1:n)+0.2, lwd = 3, col = mycols[oo])
+  
+  #points(x = rho_object$rho[oo], y = 1:n, pch = 1, col = "black")
+  points(x = rho_object$rho[oo], y = 1:n, pch = 20, col = mycols[oo], cex = 2)
+  text(x = -1.01, y = 1:n,
+       labels = paste(rho_object$Pathogen[oo], ", ",
+                      rho_object$Antibiotic[oo],
+                      paste(", N =", rho_object$Ncountries[oo]), sep = ""),
+       cex = 0.5, adj = 1)
+  col_classes <- RColorBrewer::brewer.pal(n = 8, name = "Set1"); names(col_classes) <- sort(unique(corr_AB_class)) # colors for classes
+  rect(xleft = -0.95, xright = -1, ybottom = (1:n)-0.5, ytop = (1:n)+0.5, col = col_classes[corr_AB_class[rho_object$Antibiotic[oo]]], border = NA) # rectangles
+  if(add_legend){
+    subset <- which(names(col_classes) %in% corr_AB_class[rho_object$Antibiotic[oo]]) #c(2, 3, 5, 6, 7) # subset of colors presents
+    nclasses <- length(subset)
+    rect(xleft = -0.8, xright = -0.9, ybottom = seq(n, n-(nclasses-1)*2, - 2)-0.9, ytop = seq(n, n-(nclasses-1)*2, -2)+0.9, col = col_classes[subset], border = NA)
+    text(x = -0.78, y = seq(n, n-2*(nclasses-1), - 2),
+         labels = c("Tetracyclines", "Penicillins", "Other beta-lactams", "Macrolides", "Aminoglycosides", "Quinolones", "Others", "Antimycobacterials")[subset],
+         #labels = names(col_classes),
+         adj = 0)
+  }
+  
+  # mean and CI at the bottom
+  mymean <- mean(rho_object$rho); myci <- t.test(rho_object$rho)$conf.int
+  width <- n/80
+  polygon(c(mymean, mymean, myci[2]), c(0.5-1/n-width,0.5-1/n+width,0.5-1/n), col = "black")
+  polygon(c(mymean, mymean, myci[1]), c(0.5-1/n-width,0.5-1/n+width,0.5-1/n), col = "black")
+  
+  #legend(-0.9, y = n, legend = species_names, pch = 20, col = species_cols, bty = "n", cex = 0.9)
+  #legend(-0.9, y = n, legend = rep("", 8), pch = 1, col = "black", bty = "n", cex = 0.9)
  # text(x = -1.2, y = 1:n, labels = species_names[rho_object$Pathogen[oo]], adj = 0, cex = 0.5, col = mycols)
 }
 
+# all figures
 inoutpat <- "INPAT"
 for(variable in c(c("plateau", "slope_v2", "slope_v3", "slope_v4", "median"))){
   for(mysector in c("Community", "Hospital Sector")){
@@ -67,7 +95,7 @@ for(variable in c(c("plateau", "slope_v2", "slope_v3", "slope_v4", "median"))){
       # get rho object:
       rho_object <- get(paste0("rho_", variable, "_", mysector2, "_", mytype, "_", inoutpat))
       truc <- paste0("output/forestplot", gsub(pattern = "_", replacement  = "", variable), "", mysector2, "", mytype, "", inoutpat, ".pdf")
-      pdf(truc, width = 6, height = 6)
+      pdf(truc, width = 6, height = max(4, 6/40 * length(rho_object$rho)))
       forest_plot(rho_object)
       dev.off()
     }
@@ -77,7 +105,7 @@ for(variable in c(c("plateau", "slope_v2", "slope_v3", "slope_v4", "median"))){
 # added 16/10/2023: figure 5 directly
 pdf("output/figure5.pdf", width = 6*2, height = 6)
 par(mfrow = c(1,2))
-forest_plot(rho_plateau_Community_AllNew_INPAT)
+forest_plot(rho_plateau_Community_AllNew_INPAT, add_legend = T)
 text(-1.2, 44, "A", cex = 2) 
 forest_plot(rho_slope_v4_Community_AllNew_INPAT)
 text(-1.2, 16.1, "B", cex = 2) 
@@ -99,6 +127,22 @@ write.table(x = broom::tidy(t.test(rho_slope_v4_HS_AllNew_INPAT$rho)), file = "r
 # stabilising only:
 t.test(rho_slope_v4_Community_AllNew_INPAT_stabilisingOnly$rho)
 t.test(rho_slope_v4_HS_AllNew_INPAT_stabilisingOnly$rho)
+
+
+#################### FIGURES RESTRICTED TO STABILISING ONLY ####################
+
+# stabilising only:
+rho_object <- rho_slope_v4_Community_AllNew_INPAT_stabilisingOnly
+truc <- paste0("output/forestplotslopev4CommunityAllNewINPAT_stabilisingOnly.pdf")
+pdf(truc, width = 6, height = max(4, 6/40 * length(rho_object$rho)))
+forest_plot(rho_object)
+dev.off()
+
+rho_object <- rho_slope_v4_HS_AllNew_INPAT_stabilisingOnly
+truc <- paste0("output/forestplotslopev4HSAllNewINPAT_stabilisingOnly.pdf")
+pdf(truc, width = 6, height = max(4, 6/40 * length(rho_object$rho)))
+forest_plot(rho_object)
+dev.off()
 
 #################### TIME-SHIFT PLOTS OF AMR-AMC TEMPORAL CORRELATION ####################
 
@@ -177,46 +221,9 @@ for(mysector in c("Community", "Hospital Sector")){
     dev.off()
     
     # plot
-    pdf(paste0("output/timeshift", mysector2, "", mytype, "", inoutpat, ".pdf"), width = 4 * 1.4, height = 2*3 * 1.4)
+    pdf(paste0("output/timeshift", mysector2, "", mytype, "", inoutpat, ".pdf"), width = 4 * 1.4, height = 3 * 1.4)
     
-    par(mfrow = c(2,1), mar = c(4,4,1,1))
-    
-    breakseq <- seq(-1, 1, 0.1)
-    colset <- c(rgb(1,0,0,0.5), rgb(0,1,0,0.5), rgb(0,0,1,0.5))
-    hist(truc_past$rho, breaks = breakseq, col = colset[1], las = 1, ylim =c(0,30), main ="", xlab = "Correlation coefficient")
-    hist(truc_present$rho, breaks = breakseq, col = colset[2], add= T)
-    hist(truc_future$rho, breaks = breakseq, col = colset[3], add= T)
-
-    points(x = c(-1, -0.9, -0.8), y = c(27, 30, 27), type = "o", pch = 20)
-    text(x = -0.75, y = 29.5, paste("pattern: ", x, "/", n), adj = 0)
-    text(x = -0.75, y = 28., paste("p = ", round(bt$p.value, 3)), adj = 0)
-                                 
-    signif_pos <- which(truc_present$lwr.ci > 0)
-    signif_neg <- which(truc_present$upr.ci < 0)
-    
-    pos_present <- which(truc_present$rho > 0)
-    neg_present <- which(truc_present$rho < 0)
-    
-    pos_past <- which(truc_past$rho > 0)
-    neg_past <- which(truc_past$rho < 0)
-    
-    pos_future <- which(truc_future$rho > 0)
-    neg_future <- which(truc_future$rho < 0)
-    
-    pvalue_present <- binom.test(x = length(pos_present), n = length(truc_present$rho), p = 0.5, alternative = "greater")$p.value
-    pvalue_past    <- binom.test(x = length(pos_past),    n = length(truc_past$rho),    p = 0.5, alternative = "greater")$p.value
-    pvalue_future <-  binom.test(x = length(pos_future),   n = length(truc_future$rho), p = 0.5, alternative = "greater")$p.value
-    
-    text(x = -1, y = 20, paste0("present pos | neg: ", length(pos_present), "|", length(neg_present)), adj = 0)
-    text(x = -1, y = 18.3, paste0("p-value = ", round(pvalue_present, 3)), adj = 0)
-    
-    text(x = -1, y = 16.3, paste0("past pos | neg: ", length(pos_past), "|", length(neg_past)), adj = 0)
-    text(x = -1, y = 14.6, paste0("p-value = ", round(pvalue_past, 3)), adj = 0)
-    
-    text(x = -1, y = 12.6, paste0("future pos | neg: ", length(pos_future), "|", length(neg_future)), adj = 0)
-    text(x = -1, y = 10.9, paste0("p-value = ", round(pvalue_future, 3)), adj = 0)
-    
-    legend("topright", fill = colset, legend = c("past", "present", "future"), bty = "n")
+    par(mfrow = c(1,1), mar = c(4,4,1,1))
     
     # compare the temporal correlation with the corresponding spatial correlation:
     
@@ -288,13 +295,17 @@ for(mysector in c("Community", "Hospital Sector")){
   }
 }
 
+
+#################### MULTIPANEL FIGURE 6 ####################
+
+
 #make multipanel figure 6
 #violinplot created in consumption_temporal_trend.R
 load(file = "output/violinplot.rdata")
 
 library("vioplot")
-colset <- RColorBrewer::brewer.pal(n = 7, name = "Set2"); names(colset) <- unique(data$category)[c(1,6,7,2,4,3)]
-colset <- c("pink4", "pink", "wheat4", "wheat", "slategray1", 'slategray'); names(colset) <- unique(data$category)[c(1,6,7,2,4,3)]
+colset <- RColorBrewer::brewer.pal(n = 7, name = "Set2"); names(colset) <- unique(h$data$category)[c(1,6,7,2,4,3)]
+colset <- c("pink4", "pink", "wheat4", "wheat", "slategray1", 'slategray'); names(colset) <- unique(h$data$category)[c(1,6,7,2,4,3)]
 
 # according to https://stackoverflow.com/questions/14124373/combine-base-and-ggplot-graphics-in-r-figure-window
 vp.Right <- grid::viewport(height=unit(1, "npc"), width=unit(0.5, "npc"), 
@@ -302,10 +313,20 @@ vp.Right <- grid::viewport(height=unit(1, "npc"), width=unit(0.5, "npc"),
                            y=1, x=0.5)
 rho_object <- get_mean_ci(rho_object_present)
 
-pdf(paste0("output/figure_6.pdf"), width =6*2, height = 6)
-par(mfrow=c(1,2))
-forest_plot(rho_object)
-text(-1.2, 68, "A", cex = 2) 
-text(1.1, 68, "B", cex = 2) 
-vioplot(data$rho ~ data$category, col = colset, cex.axis = 0.5, xlab = 'Category', ylab = 'Regression Coefficient [DDD/1000 inhabitants/year/year]', frame.plot = FALSE, vp=vp.Right)
+pdf(paste0("output/figure_6_v2.pdf"), width =6*2, height = max(4, 6/40 * length(rho_object$rho)))
+par(mfrow=c(1,2), xpd = T)
+forest_plot(rho_object, add_legend = T)
+text(-1.3, 42, "A", cex = 2) 
+text(1.1, 42, "B", cex = 2)
+plot(NULL, xlim = c(0,6), ylim = c(-1.5,1.5), xlab = "", ylab = "Spearman correlation coefficient use vs. year", axes = F)
+axis(side = 2, at = seq(-1,1,0.2), las = 1)
+all_cat <- names(table(h$data$category))
+for(i in 1:6){
+  subset <- which(h$data$category==all_cat[i])
+  points(rep(i-0.5, length(subset)), h$data$rho[subset], pch = 20, col = colset[i])
+  segments(x0 = i-0.8, x1 = i-0.2, y0 = mean(h$data$rho[subset]), y1 = mean(h$data$rho[subset]), col = colset[i], lwd = 3)
+}
+text((1:6)-0.5, -1.1, all_cat, srt = 45, col = colset)
+#vioplot(h$data$rho ~ h$data$category, col = colset, cex.axis = 0.5, xlab = 'Category', ylab = 'Regression Coefficient [DDD/1000 inhabitants/year/year]', frame.plot = FALSE, vp=vp.Right)
 dev.off()
+

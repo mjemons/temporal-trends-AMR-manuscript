@@ -17,6 +17,8 @@ suppressPackageStartupMessages({
   library(wrapr)
   library(grid)
   library(rworldmap)
+  library(patchwork)
+  library(lme4)
 })
 
 set.seed(1234)

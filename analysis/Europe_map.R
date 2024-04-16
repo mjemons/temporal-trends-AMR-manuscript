@@ -72,7 +72,7 @@ dev.off()
 amc_summary <- read.csv("data/summary_AMC_byclass_improved.csv")
 
 ddply(amc_summary[amc_summary$Sector=="Community" & amc_summary$Antimicrobial.Type=="AllNew", ], .(Antibiotic_class), summarise, sum_DDD = sum(DDD, na.rm = T))
-.Last.value$Antibiotic_class[.Last.value$sum_DDD > 500]
+#.Last.value$Antibiotic_class[.Last.value$sum_DDD > 500]
 u_classes <- c("J01A", "J01C", "J01D", "J01F", "J01M") # only keep those that are consumed enough
 years <- seq(1998, 2016)
 

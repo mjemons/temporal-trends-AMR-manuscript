@@ -3,7 +3,7 @@
 logistic_fits_wrapper = function(patient_type = 'INPAT', time_points = 5, observations = 30, minimum_N_R = 10){
 
 #patient_type = 'INPAT'; time_points = 5; observations = 30; minimum_N_R = 10
-amr_summary <- read.csv(file = "data/summary_AMR.csv")
+amr_summary <- read.csv(file = "data/summary_AMR_filtered.csv")
 amr_summary <- amr_summary %>% arrange(Year)
 # print info on AMR files
 range(amr_summary$Year)
@@ -28,6 +28,7 @@ for(i in 1:length(all_combR)){
   tmp <- amr_summary[which(amr_summary$combR == mycomb),]
   tmp1 <- tmp[which(tmp$patientType==patient_type),]
   if((nrow(tmp1) > time_points) & (all(tmp1$N >= observations)) & (sum(tmp1$N_R + tmp1$N_I) >= minimum_N_R)){ # FB added condition on minimum number R isolates
+    print(tmp1)
     f1 = cbind(mycomb,fitting0(tmp1))
     fit.flat = rbind(fit.flat,f1)
     f2 = cbind(mycomb,fitting1(tmp1))

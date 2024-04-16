@@ -26,4 +26,15 @@ summary_fits_toplot[summary_fits_toplot$category == 'plateauing',]$category = 's
 
 summary_fits_toplot$category = factor(summary_fits_toplot$category, levels = c('decreasing (s)',"decreasing (ns)",'stable','stabilising','increasing (ns)','increasing (s)'))
 
+# analyse changes:
+# increasing categories re-categorised
+increasing.regategorised = table(summary_fits_toplot[summary_fits_toplot$combR %in% all.fits[all.fits$m1.slope>0,]$combR,]$category)/sum(table(summary_fits_toplot[summary_fits_toplot$combR %in% all.fits[all.fits$m1.slope>0,]$combR,]$category))
+print(paste('Logistic increasing re-categorised as stable or stabilising:',round(increasing.regategorised["stable"] + increasing.regategorised["stabilising"],2)))
 
+# increasing (s) categories re-categorised
+increasing.s.regategorised = table(summary_fits_toplot[summary_fits_toplot$combR %in% all.fits[all.fits$m1.slope>0&all.fits$m1.slope.pval<0.05,]$combR,]$category)/sum(table(summary_fits_toplot[summary_fits_toplot$combR %in% all.fits[all.fits$m1.slope>0&all.fits$m1.slope.pval<0.05,]$combR,]$category))
+print(paste('Logistic increasing (s) re-categorised as stabilising:',round(increasing.s.regategorised["stabilising"],2)))
+
+# increasing (s) categories re-categorised for E.coli
+increasing.s.regategorised = table(summary_fits_toplot[summary_fits_toplot$combR %in% all.fits[all.fits$m1.slope>0&all.fits$m1.slope.pval<0.05&all.fits$Pathogen == "ESCCOL",]$combR,]$category)/sum(table(summary_fits_toplot[summary_fits_toplot$combR %in% all.fits[all.fits$m1.slope>0&all.fits$m1.slope.pval<0.05&all.fits$Pathogen == "ESCCOL",]$combR,]$category))
+print(paste('Logistic increasing (s) re-categorised as stabilising E.coli only:',round(increasing.s.regategorised["stabilising"],2)))

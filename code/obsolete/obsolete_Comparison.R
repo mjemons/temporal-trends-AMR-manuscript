@@ -2,62 +2,44 @@ library(RColorBrewer)
 library(lme4)
 library(dotenv)
 
-load_dot_env(file = ".env")
+#load_dot_env(file = ".env")
 
-setwd(Sys.getenv(c("HOME_DIR")))
-
+#setwd(Sys.getenv(c("HOME_DIR")))
+amr_summary <- read.csv('data/summary_AMR_filtered.csv')
+amr_summary$combR <- paste(amr_summary$Pathogen, amr_summary$Country, amr_summary$Antibiotic, sep = "|")
 all_combR <- sort(unique(amr_summary$combR))
+inoutpat <- "INPAT"
+amr_fit_details <- read.csv(file = paste0("data/results/all_fit_details", inoutpat, ".csv"))
+Failed = amr_fit_details[amr_fit_details$m2.plateau == 'NA',]$combR
 
 pdf("output/AllCourses.pdf", paper = "a4", width = 0, height = 0)
 par(mfrow = c(4, 3))
 par(las = 1)
 for(i in 1:length(all_combR)){
   mycomb <- all_combR[i]
+  #in case the fit failed, don't plot it
+  if(mycomb %in% Failed) next
   tmp <- amr_summary[which(amr_summary$combR == mycomb),]
   tmp1 <- tmp[which(tmp$patientType=="INPAT"),]
-  tmp2 <- tmp[which(tmp$patientType=="OUTPAT"),]
-  if(any(duplicated(tmp1$Year))) stop()
-  if(any(duplicated(tmp2$Year))) stop()
+  if(any(duplicated(tmp1$Year))) next
   is_plot <- F
-  if((nrow(tmp1) > 5) & (all(tmp1$N > 30))){ # at least 5 years & all points > 100
+  if((nrow(tmp1) > 5) & (all(tmp1$N >= 30)) & (sum(tmp1$N_R + tmp1$N_I) >= 10)){ # at least 5 years & all points > 30
     print(mycomb)
-    plot(tmp1$Year, tmp1$p, col = "red", ylim = c(0,1), xlim = c(1998, 2018), pch = 20, type = "o", ylab = "frequency", xlab = "year", main = mycomb)
+    plot(tmp1$Year, tmp1$p, col = "red", ylim = c(0,1), xlim = c(1998, 2023), pch = 20, type = "o", ylab = "frequency", xlab = "year", main = mycomb)
     segments(x0 = tmp1$Year, y0 = tmp1$p_min, x1 = tmp1$Year, y1 = tmp1$p_max, col = 'red')
     spl <- smooth.spline(x = tmp1$Year, y = tmp1$p, w = 1 / tmp1$N, df = 5)
     lines(spl$x, spl$y, col=rgb(red = 1, green = 0, blue = 0, alpha = 0.5), lwd = 4)
     is_plot <- T
-  }
-  if(mycomb %in% df_coefficients$combR){
-    is_plateau <- df_coefficients$is_plateau[which(df_coefficients$combR == mycomb)]
-    if(!is.na(is_plateau)){
-      text(x = 2007.5, y = 0.9, labels = is_plateau)
+    if(mycomb %in% summary_fits$combR){
+      category <- summary_fits$category[which(summary_fits$combR == mycomb)]
+      text(x = 2007.5, y = 0.9, labels = category)
     }
-  }
-  if(mycomb %in% df_coefficients$combR){
-    is_trend <- df_coefficients$logistic.summary[which(df_coefficients$combR == mycomb)]
-    if(!is.na(is_trend)){
-      text(x = 2007.5, y = 0.8, labels = is_trend)
-    }
-  }
-  if(mycomb %in% df_coefficients$combR){
-    is_K <- df_coefficients$logistic.plateau.K[which(df_coefficients$combR == mycomb)]
-    if(!is.na(is_trend)){
-      text(x = 2007.5, y = 0.7, labels = is_K)
-    }
-  }
-  
-  if((nrow(tmp2) > 5) & (all(tmp2$N > 30))){ # at least 5 years for one of them
-    if(is_plot) plot_fun <- points else plot_fun <- plot
-    plot_fun(tmp2$Year+0.1, tmp2$p, col = "blue", pch = 20, type = "o", ylim = c(0,1), xlim = c(1998, 2023), ylab = "frequency", xlab = "year", main = mycomb)
-    segments(x0 = tmp2$Year+0.1, y0 = tmp2$p_min, x1 = tmp2$Year+0.1, y1 = tmp2$p_max, col = 'blue')
-    spl <- smooth.spline(x = tmp2$Year, y = tmp2$p, w = 1 / tmp2$N, df = 5)
-    lines(spl$x, spl$y, col=rgb(red = 0, green = 0, blue = 1, alpha = 0.5), lwd = 4)
   }
 }
 dev.off()
 
 all_combR <- sort(unique(amr_summary$combR))
-Failed = df_coefficients[df_coefficients$logistic.plateau == 'NA',]$combR
+Failed = amr_fit_details[amr_fit_details$m2.plateau == 'NA',]$combR
 pdf("output/testingFitFail.pdf", paper = "a4", width = 0, height = 0)
 par(mfrow = c(4, 3))
 par(las = 1)
@@ -70,26 +52,17 @@ for(i in 1:length(Failed)){
   if(any(duplicated(tmp1$Year))) stop()
   if(any(duplicated(tmp2$Year))) stop()
   is_plot <- F
-  if((nrow(tmp1) > 5) & (all(tmp1$N > 30))){ # at least 5 years & all points > 100
+  if((nrow(tmp1) >= 5) & (all(tmp1$N >= 30))){ # at least 5 years & all points > 100
     print(mycomb)
-    plot(tmp1$Year, tmp1$p, col = "red", ylim = c(0,1), xlim = c(1998, 2018), pch = 20, type = "o", ylab = "frequency", xlab = "year", main = mycomb)
+    plot(tmp1$Year, tmp1$p, col = "red", ylim = c(0,1), xlim = c(1998, 2023), pch = 20, type = "o", ylab = "frequency", xlab = "year", main = mycomb)
     segments(x0 = tmp1$Year, y0 = tmp1$p_min, x1 = tmp1$Year, y1 = tmp1$p_max, col = 'red')
     spl <- smooth.spline(x = tmp1$Year, y = tmp1$p, w = 1 / tmp1$N, df = 5)
     lines(spl$x, spl$y, col=rgb(red = 1, green = 0, blue = 0, alpha = 0.5), lwd = 4)
     is_plot <- T
   }
-  if(mycomb %in% df_coefficients$combR){
-    is_plateau <- df_coefficients$is_plateau[which(df_coefficients$combR == mycomb)]
-    if(!is.na(is_plateau)){
-      text(x = 2007.5, y = 0.9, labels = is_plateau)
-    }
-  }
-  if(mycomb %in% df_coefficients$combR){
-    is_trend <- df_coefficients$logistic.trend[which(df_coefficients$combR == mycomb)]
-    is_plateau <- df_coefficients$logistic.plateau[which(df_coefficients$combR == mycomb)]
-    if(!is.na(is_trend)){
-      text(x = 2007.5, y = 0.8, labels = paste(is_trend,is_plateau,sep=' '))
-    }
+  if(mycomb %in% summary_fits$combR){
+    category <- summary_fits$full.category[which(summary_fits$combR == mycomb)]
+    text(x = 2007.5, y = 0.9, labels = category)
   }
   
   if((nrow(tmp2) > 5) & (all(tmp2$N > 30))){ # at least 5 years for one of them
@@ -122,14 +95,14 @@ for(i in 1:length(all_combR)){
   tmp <- amr_summary[which(amr_summary$combR_ == mycomb),]
   tmp1 <- tmp[which(tmp$patientType=="INPAT"),]
   tmp2 <- tmp[which(tmp$patientType=="OUTPAT"),]
-  tmp1 <- tmp1[tmp1$N > 10, ]
-  tmp2 <- tmp2[tmp2$N > 10, ]
+  tmp1 <- tmp1[tmp1$N >= 30, ]
+  tmp2 <- tmp2[tmp2$N >= 30, ]
   countries <- unique(tmp1$Country)
   if(nrow(tmp1) > 5){
     idx <- 1
     for(cc in countries){
       if(idx==1) plot_fun <- plot else plot_fun <- points
-      plot_fun(tmp1$Year[tmp1$Country==cc], tmp1$p[tmp1$Country==cc], col = col_countries[cc], ylim = c(0,1), xlim = c(1998, 2020), pch = 20, type = "o", ylab = "frequency", xlab = "year", main = mycomb)
+      plot_fun(tmp1$Year[tmp1$Country==cc], tmp1$p[tmp1$Country==cc], col = col_countries[cc], ylim = c(0,1), xlim = c(1998, 2023), pch = 20, type = "o", ylab = "frequency", xlab = "year", main = mycomb)
       #lines(smooth.spline(x=))
       if(length(tmp1$Year[tmp1$Country==cc])>5){
         spl <- smooth.spline(x = tmp1$Year[tmp1$Country==cc], y =tmp1$p[tmp1$Country==cc], w = 1 / tmp1$N[tmp1$Country==cc], df = 5)

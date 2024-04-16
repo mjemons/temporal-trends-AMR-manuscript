@@ -37,7 +37,7 @@ freq_plot <- function(variable.of.interest, coefficients_summary){
   counts$Freq <- counts["Count"]/counts["Total"]
   
   # sort by frequency of resistance
-  print(counts)
+  #print(counts)
   temp= ddply(coefficients_summary,.(coefficients_summary[,variable.of.interest]),summarise,freq.res = median(median.amr))
   temp <- counts[counts[,'logistic'] %in% c('increasing (s)', 'increasing (ns)'),]
   temp <- temp %>% group_by(temp[[variable.of.interest]]) %>% dplyr::summarise(sum_freq = sum(Freq))
@@ -50,8 +50,8 @@ freq_plot <- function(variable.of.interest, coefficients_summary){
     level.order = c('Luxembourg', 'Slovenia',level.order)
   }
   
-  counts[,variable.of.interest] = factor(counts[,variable.of.interest], levels = level.order)
-  print(level.order)
+  counts[,variable.of.interest] = factor(counts[,variable.of.interest], levels = unique(level.order))
+  #print(level.order)
   p <- ggplot(counts, aes(x = counts[,variable.of.interest], y = Freq$Count , fill= logistic))+
     #, alpha = Shading)) +
     scale_alpha_discrete(range = c(0.4, 0.8)) +
@@ -64,24 +64,23 @@ freq_plot <- function(variable.of.interest, coefficients_summary){
     labs(fill = "Classification of trend") +
     theme_light()+
     theme(axis.title=element_text(size=12,face="bold"),axis.text.x= element_text(angle = 45, vjust = 0.9, hjust=1, size = 12),legend.title=element_text(size=12,face="bold"), 
-          legend.text=element_text(size=12),legend.position="none")
+          legend.text=element_text(size=12))#,legend.position="none")
   if(variable.of.interest == 'Antibiotic_class'){
     p = p + xlab('Antibiotic Class')
   }
   if(variable.of.interest == 'Pathogen_long'){
     p = p + xlab('Pathogen')
   }
-  p
-  ggsave(paste0('output/trends_by_',variable.of.interest,'.svg'), width=25, height=15, dpi=500)
-  print(p)
+  return(p)
+  #ggsave(paste0('output/trends_by_',variable.of.interest,'.svg'), width=25, height=15, dpi=500)
 }
 
-for(variable.of.interest in c('Pathogen_long', 'Country', 'Antibiotic_class')){
-  pdf(paste0('output/trends_by_',variable.of.interest,'.pdf'), width = 8, height = 6)
-  freq_plot(variable.of.interest, summary_fits_toplot)
-  dev.off()
-}
-
+p_list <- lapply(list('Pathogen_long', 'Country', 'Antibiotic_class'), freq_plot, summary_fits_toplot)
+pdf(paste0('output/trends_by_total.pdf'), width = 15, height = 18)
+p <- wrap_plots(p_list, nrow=3, guides = 'collect', tag_level = 'new') + plot_annotation(tag_levels = 'A') & 
+  theme(plot.tag = element_text(size = 30))
+print(p)
+dev.off()
 # freq_plot('Pathogen_long',summary_fits_toplot)
 # freq_plot('Country',summary_fits_toplot)
 # freq_plot('Antibiotic_class',summary_fits_toplot)

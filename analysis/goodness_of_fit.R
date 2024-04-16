@@ -26,7 +26,7 @@ coefficients_summary$trend = factor(coefficients_summary$trend, levels = c('decr
 
 
 # get time series
-amr_summary <- read.csv(file = "data/summary_AMR.csv")
+amr_summary <- read.csv(file = "data/summary_AMR_filtered.csv")
 amr_summary <- amr_summary %>% arrange(Year)
 amr_summary$combR <- paste(amr_summary$Pathogen, amr_summary$Country, amr_summary$Antibiotic, sep = "|")
 
@@ -135,7 +135,30 @@ select_cat('decreasing (ns)')
 select_cat('decreasing (s)')
 select_cat('poor fit')
 
-pdf("goodnessOfFitFigure.pdf", width = 9, height = 9)
+ylim <- c(0, 1)
+
+pdf("output/SIfigure1.pdf", width = 3, height = 8)
+
+par(mar = c(4,4,1,1), xpd = F)
+layout <- layout(matrix(c(1,2,3), 3, 1, byrow = T))
+
+curve(1/(1+exp(1847.528-0.9226887*x)),ylab = "Frequency", xlab = "Year", las = 1, bty = "n", col=rgb(red = 0.5, green = 0.5, blue = 0.5, alpha = 0.5), lwd = 4, ylim = ylim,xlim = c(1998, 2019))
+text(x = 2008.5, y = ylim[2]-0.06 , 'Standard logistic model', adj = 0.5, cex = 1.5, col = 'black')
+text(x = 2012,0.5, expression(f(t) == frac(1,1+e^(-k(t-k[0])))))
+
+
+plot(NA,ylim = ylim, xlim = c(1998, 2019), las = 1, bty = "n", ylab = "Frequency", xlab = "Year",)
+abline(h = 0.65, col=rgb(red = 0.5, green = 0.5, blue = 0.5, alpha = 0.5), lwd = 4, ylim = ylim, xlim = c(1998, 2019))
+text(x = 2008.5, y = ylim[2]-0.06, 'Flat model', adj = 0.5, cex = 1.5, col = 'black')
+text(x = 2012,0.5, expression(f(t) == k[2]))
+
+curve(0.7/(1+exp(1847.528-0.9226887*x)),ylab = "Frequency", xlab = "Year", las = 1, bty = "n", col=rgb(red = 0.5, green = 0.5, blue = 0.5, alpha = 0.5), lwd = 4, ylim = ylim, xlim = c(1998, 2019))
+text(x = 2008.5, y = ylim[2]-0.06, 'Plateauing logistic model', adj = 0.5, cex = 1.5, col = 'black')
+text(x = 2012,0.5, expression(f(t) == frac(k[2],1+e^(-k[1](t-k[0])))))
+
+dev.off()
+
+pdf("output/goodnessOfFitFigure.pdf", width = 11, height = 11)
 
 par(mar = c(4,4,1,1), xpd = F)
 layout <- layout(matrix(c(1,2,3,4,5,6,7,8,8), 3, 3, byrow = T))

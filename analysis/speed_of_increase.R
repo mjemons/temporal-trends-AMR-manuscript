@@ -94,6 +94,7 @@ ggsave("output/speed_of_change.pdf", width=7.5, height=5)
 # get consumption data and compute overall 2000 consumption
 
 amc_summary <- read.csv("data/summary_AMC_byclass_improved.csv")
+subset = amc_summary[amc_summary$Antimicrobial.Type == 'AllNew',]
 total.consumption = ddply(subset,.(Country,Year,Sector),summarise,DDD = sum(DDD))
 
 # format data for analysis
