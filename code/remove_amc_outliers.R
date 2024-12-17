@@ -18,6 +18,9 @@ for(i in 1:length(full_combC)){
 
 amc_clean = amc_summary[which(amc_summary$outlier == FALSE),]
 
+#save the flagged data
+write.csv(file = "data/summary_AMC_byclass_outliers_flagged.csv",amc_summary)
+
 #save the cleaned data
 write.csv(file = "data/summary_AMC_byclass_filtered.csv",amc_clean)
 

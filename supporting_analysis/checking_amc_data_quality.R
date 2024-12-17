@@ -33,6 +33,47 @@ for(i in 1:length(all_combC)){
 
 dev.off() 
 
+# plot the same thing but now mark the outliers with a colour
+
+amc_summary_outlier <- read.csv(file = "data/summary_AMC_byclass_outliers_flagged.csv")
+amc_summary_outlier$Colour[amc_summary_outlier$outlier == TRUE]="red"
+amc_summary_outlier$Colour[amc_summary_outlier$outlier == FALSE]="blue"
+
+amc_sub = amc_summary_outlier[amc_summary_outlier$Antimicrobial.Type=='Oral'&amc_summary_outlier$Antibiotic_class!="A07A"&amc_summary_outlier$Sector=='Community',]
+amc_sub$combC <- paste(amc_sub$Antibiotic_class, amc_sub$Country, amc_sub$Sector, sep = "|")
+all_combC = unique(amc_sub$combC)
+
+pdf("supporting_analysis/output/all_consumption_community_outlier.pdf", paper = "a4", width = 0, height = 0)
+par(mfrow = c(4, 3))
+par(las = 1)
+for(i in 1:length(all_combC)){
+  mycomb <- all_combC[i]
+  tmp1 <- amc_sub[which(amc_sub$combC == mycomb),]
+  print(mycomb)
+  
+  plot(tmp1$Year, tmp1$DDD, ylim= c(0,max(tmp1$DDD,na.rm=T)), col = tmp1$Colour, pch = 20, type = "p", ylab = "DDD", xlab = "year", main = mycomb)
+  points(tmp1$Year[tmp1$outlier==FALSE ], tmp1$DDD[tmp1$outlier==FALSE ], col = "blue", type = "l")
+  abline(h = mean(tmp1$DDD),col = "cadetblue4")
+  abline(h = median(tmp1$DDD),col ="cadetblue3")
+}
+
+dev.off() 
+
+# calculate some statistics
+amc_summary_outlier_mean <- amc_summary_outlier %>% dplyr::group_by(combC) %>% 
+  dplyr::select('class','Country','Sector','Antimicrobial.Type', 'combC', 'outlier') %>%
+  dplyr::mutate(sum_outlier = sum(outlier)) %>% unique()
+
+hist(amc_summary_outlier_mean$sum_outlier, main='Outliers per drug&country&consumption combination', xlab = 'Outlier sum over years')
+
+amc_summary_outlier_mean_df <- as.data.frame(amc_summary_outlier_mean$sum_outlier)
+names(amc_summary_outlier_mean_df) <- 'outlier_sum'
+
+p <- ggplot(amc_summary_outlier_mean_df, aes(x=outlier_sum)) + 
+  geom_bar(position = 'dodge') + 
+  theme_light() + 
+  xlab('Outlier sum over years') 
+ggsave('supporting_analysis/output//histogram_outlier_sum.pdf')
 # plot countries together. Lazy coding, colours are not consistent across subplots
 
 amc_sub = amc_summary[amc_summary$Antimicrobial.Type=='Oral'&amc_summary$Antibiotic_class!="A07A"&amc_summary$Sector=='Community',]

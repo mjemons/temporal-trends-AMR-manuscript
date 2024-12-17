@@ -27,8 +27,7 @@ for(i in 1:length(all_combR)){
   mycomb <- all_combR[i]
   tmp <- amr_summary[which(amr_summary$combR == mycomb),]
   tmp1 <- tmp[which(tmp$patientType==patient_type),]
-  if((nrow(tmp1) > time_points) & (all(tmp1$N >= observations)) & (sum(tmp1$N_R + tmp1$N_I) >= minimum_N_R)){ # FB added condition on minimum number R isolates
-    print(tmp1)
+  if((nrow(tmp1) > time_points) & (all(tmp1$N >= observations)) & (sum(tmp1$N_I_R) >= minimum_N_R)){ # FB added condition on minimum number R isolates
     f1 = cbind(mycomb,fitting0(tmp1))
     fit.flat = rbind(fit.flat,f1)
     f2 = cbind(mycomb,fitting1(tmp1))
@@ -59,14 +58,21 @@ write.csv(all.fits, paste("data/results/all_fit_details", patient_type,".csv",se
 # ok, then find best fit by comparing AICc
 
 minAICc = c()
+deltaAICc = c()
+secSmallestAICc = c()
 set.seed(1234)
 
 for(i in 1:dim(fit.flat)[1]){  
   AICcs = c(fit.flat$m0.AICc[i],fit.log$m1.AICc[i],fit.plateau$m2.AICc[i])
   AICcs[is.na(AICcs)] == Inf
   minAICc = c(minAICc,which.min(AICcs))
+  # sort the AICc
+  AICcsSorted = sort(AICcs)
+  deltaAICc = c(deltaAICc, AICcsSorted[2]-AICcsSorted[1])
+  # find second smallest element index in the original unsorted AICc vector
+  secSmallestAICc <- c(secSmallestAICc, which(AICcs == AICcsSorted[2]))
 }
-
+saveRDS(deltaAICc, file = 'data/results/deltaAIC.rds')
 # add information about which fit is best to data frames
 fit.flat$best.AICc = minAICc == 1
 fit.log$best.AICc = minAICc == 2
@@ -85,6 +91,16 @@ meta.data$best.model = ''
 meta.data[minAICc ==1,]$best.model = 'flat'
 meta.data[minAICc ==2,]$best.model = 'logistic'
 meta.data[minAICc ==3,]$best.model = 'plateau'
+
+# get second best fit
+meta.data$second.best.model = ''
+meta.data[secSmallestAICc ==1,]$second.best.model = 'flat'
+meta.data[secSmallestAICc ==2,]$second.best.model = 'logistic'
+meta.data[secSmallestAICc ==3,]$second.best.model = 'plateau'
+
+
+# add info of delta AICc
+meta.data$deltaAICc <- deltaAICc
 
 # add info r2, error and median
 meta.data$r2.best.fit = NA

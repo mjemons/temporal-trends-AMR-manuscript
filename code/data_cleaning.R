@@ -149,12 +149,36 @@ amr_summary$Pathogen_long[amr_summary$Pathogen=='ACISPP'] <- 'Acinetobaccter spp
 
 amr_summary$combR <- paste(amr_summary$Pathogen, amr_summary$Country, amr_summary$Antibiotic, sep = "|")
 
+# compare correlation of AMR inpat and outpat data
+# filter out UNK datapoints
+amr_summary_inpatoutpat <- amr_summary %>% filter(patientType %in% c('INPAT', 'OUTPAT'))
+# make a new combination of Pathogen, Country, Antibiotic, Year to match INPAT and OUTPAT
+amr_summary_inpatoutpat$combnew <- paste(amr_summary_inpatoutpat$Pathogen, amr_summary_inpatoutpat$Country, amr_summary_inpatoutpat$Antibiotic, amr_summary_inpatoutpat$Year, sep = "|")
+# match them and only retain what has more than two elements per year, so both INPAT and OUTPAT
+amr_summary_inpatoutpat <- amr_summary_inpatoutpat %>% group_by(combnew) %>% filter(n() == 2)
+# small check - should have equally many datapoints
+table(amr_summary_inpatoutpat$patientType)
+# split by patientType
+amr_summary_inpatoutpat_split <- amr_summary_inpatoutpat %>% group_by(combnew) %>% select (combnew, patientType, p) %>% split(amr_summary_inpatoutpat$patientType)
+# complicated way to get two p that correspond to INPAT and OUTPAT
+amr_summary_inpat <- amr_summary_inpatoutpat_split$INPAT 
+amr_summary_outpat <- amr_summary_inpatoutpat_split$OUTPAT
+amr_summary_matched <- merge(amr_summary_inpat, amr_summary_outpat, by = "combnew")
+# correlate the two p values
+cor(amr_summary_matched$p.x, amr_summary_matched$p.y)
+# difference in means
+mean(amr_summary_matched$p.x) - mean(amr_summary_matched$p.y)
+
+#filter out only inpatient data
+amr_summary_filtered <- amr_summary %>% filter(patientType == 'INPAT') 
 #filter out combinations with less than 5 years of data, 30 observations per timepoint and less than 10 cases for N_I + N_R
-amr_summary_filtered <- amr_summary %>% filter(patientType == 'INPAT')
 amr_summary_filtered <- amr_summary_filtered %>% group_by(combR) %>% filter(n() > 5) %>% filter(all(N>=30)) %>% filter(sum(N_R + N_I) >= 10)
+#add the columns N_R and N_I together and delete N_R and N_I
+amr_summary_filtered <- amr_summary_filtered %>% group_by(combR) %>%  mutate(N_I_R = N_R + N_I) %>% select(-c(N_I, N_R))
 #check that filtering worked properly
 if(any(amr_summary_filtered$N < 30)) cat('mistake in filtering observations')
-if(any(sum(amr_summary_filtered$N_I + amr_summary_filtered$N_R) < 10)) cat('mistake in filtering resistant types')
+if(any(sum(amr_summary_filtered$N_I_R) < 10)) cat('mistake in filtering resistant types')
+if(any(amr_summary_filtered$N_S + amr_summary_filtered$N_I_R != amr_summary_filtered$N)) cat('mistake in computing N_I_R sum')
 #save the re-annotated and filtered AMR files
 write.csv(x = amr_summary_filtered, file = "data/summary_AMR_filtered.csv", row.names = F)
 

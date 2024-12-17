@@ -6,7 +6,7 @@ rm(list = ls())
 
 # get amc data and amr data
 amc_summary = read.csv(file = "data/summary_AMC_byclass_improved.csv")
-amr_summary <- read.csv("data/summary_AMR.csv")
+amr_summary <- read.csv("data/summary_AMR_filtered.csv")
 amr_summary$combC <- paste(amr_summary$Antibiotic_class, amr_summary$Country, amr_summary$patientType,amr_summary$Pathogen, sep = "|")
 
 inoutpat <- "INPAT"

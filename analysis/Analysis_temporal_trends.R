@@ -178,9 +178,7 @@ write.csv(tt, "data/results/binomial_model.csv",sep='')
 
 all.fits.inpat <- read.csv(paste("data/results/all_fit_detailsINPAT.csv"))
 all.fits.inpat$combR.long <- paste(all.fits.inpat$Pathogen, all.fits.inpat$Country ,all.fits.inpat$Antibiotic, "OUTPAT", sep = "|")
-all.fits.outpat <- read.csv(paste("data/results/all_fit_detailsOUTPAT.csv"))
-all.fits.outpat$combR.long <- paste(all.fits.outpat$Pathogen, all.fits.outpat$Country ,all.fits.outpat$Antibiotic, "INPAT", sep = "|")
-all.fits <- rbind(all.fits.inpat, all.fits.outpat)
+all.fits <- all.fits.inpat
 
 all.fits$trend = ''
 all.fits[all.fits$m1.slope>0 & all.fits$m1.slope.pval < 0.05,]$trend = 'increasing'

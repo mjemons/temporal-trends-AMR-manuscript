@@ -7,13 +7,13 @@ source("code/Utils.R")
 
 #### 1. Data Formating #####
 
-## Included only for reference. You can skip running this: the formated files have been saved.
+## Included only for reference. You can skip running this: the formatted files have been saved.
 
 # Generate AMC and AMR summary files from raw data files.
 #source("code/preprocessing/0_2_european_data_cleaning.R")
 
 # Minor formatting changes to variable names - only for reference, the unfiltered data is not provided
-source("code/data_cleaning.R")
+#source("code/data_cleaning.R")
 
 #### 2. Data Cleaning ####
 
@@ -44,17 +44,16 @@ source("analysis/Europe_map.R")
 # Analysis of the rate of change in increasing vs stabilising trajectories
 source("analysis/speed_of_increase.R")
 
-# FB STOPPED HERE 02/06/2023
+#### 5. Trend in AMC vs trend in resistance
 
-##### 5. Correlate with AMC, analyse and visualise the correlations
+source("analysis/consumption_temporal_trend.R")
+
+##### 6. Correlate with AMC, analyse and visualise the correlations
 
 source("code/correlate_amc_amr.R")
 
 source("code/analyse_temporal_spatial_correlations.R")
 
-#### 6. Trend in AMC vs trend in resistance
-
-source("analysis/consumption_temporal_trend.R")
 
 ##### 7. Supporting Information #####
 
