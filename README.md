@@ -6,8 +6,6 @@ This repository organises the code for the [preprint](https://medrxiv.org/cgi/co
 
 - `Masterscript.R`: overall script which calls all the individual scripts. The idea here is to make the workflow clear to an external person using the scripts.
 
-- `/data`: folder which contains aggregated datasets (in 'original' subfolder, note that raw unaggregated data is not shared); processed versions of these data; For now we are not allowed to share aggregated data. This will follow as soon as we get approval
-
 - `/code`: folder containing code to generate temporal fits and correlations.
 code/preprocessing: code that generates the aggregated datasets from the raw data (not shared).
 code/obsolete: older analyses no longer relevant to the paper, but kept for reference (for now)
